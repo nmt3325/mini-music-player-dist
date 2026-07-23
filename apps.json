@@ -1,0 +1,20 @@
+{
+  "name": "Mini Music Player",
+  "identifier": "com.example.minimusicplayer.source",
+  "apps": [
+    {
+      "name": "Mini Music Player",
+      "bundleIdentifier": "com.example.MiniMusicPlayer",
+      "developerName": "animationsaver",
+      "version": "1.0.0",
+      "versionDate": "2026-07-23",
+      "versionDescription": "Initial placeholder. This will be overwritten automatically by CI after the next build.",
+      "downloadURL": "https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa",
+      "localizedDescription": "iOS 6 / iOS 9 style music player.",
+      "iconURL": "",
+      "tintColor": "1DB954",
+      "size": 0,
+      "minOSVersion": "12.0"
+    }
+  ]
+}
