@@ -6,7 +6,7 @@
       "name": "Mini Music Player",
       "bundleIdentifier": "com.example.MiniMusicPlayer",
       "developerName": "animationsaver",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "versionDate": "2026-07-23",
       "versionDescription": "Automated build from CI.",
       "downloadURL": "https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa",
