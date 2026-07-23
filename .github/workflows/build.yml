@@ -1,0 +1,150 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-simulator:
+    name: Build (iOS Simulator)
+    runs-on: macos-15
+    steps:
+      - name: Checkout app source (private repo)
+        uses: actions/checkout@v4
+        with:
+          repository: animationsaver/mini-music-player
+          token: ${{ secrets.CODE_REPO_TOKEN || github.token }}
+          path: code
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: code
+        run: xcodegen generate
+
+      - name: Build for simulator
+        working-directory: code
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project MiniMusicPlayer.xcodeproj \
+            -scheme MiniMusicPlayer \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+  build-ipa:
+    name: Build unsigned IPA and publish
+    runs-on: macos-15
+    steps:
+      - name: Checkout distribution repo
+        uses: actions/checkout@v4
+
+      - name: Checkout app source (private repo)
+        uses: actions/checkout@v4
+        with:
+          repository: animationsaver/mini-music-player
+          token: ${{ secrets.CODE_REPO_TOKEN || github.token }}
+          path: code
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: code
+        run: xcodegen generate
+
+      - name: Archive (no code signing)
+        working-directory: code
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project MiniMusicPlayer.xcodeproj \
+            -scheme MiniMusicPlayer \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath "$PWD/build/MiniMusicPlayer.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            archive
+
+      - name: Package unsigned IPA
+        working-directory: code
+        run: |
+          set -euo pipefail
+          APP_PATH="build/MiniMusicPlayer.xcarchive/Products/Applications/MiniMusicPlayer.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::built .app not found at $APP_PATH"
+            exit 1
+          fi
+          rm -rf build/Payload build/MiniMusicPlayer.ipa
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          (cd build && zip -qry MiniMusicPlayer.ipa Payload)
+          ls -lh build/MiniMusicPlayer.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniMusicPlayer-unsigned-ipa
+          path: code/build/MiniMusicPlayer.ipa
+          if-no-files-found: error
+
+      - name: Publish IPA to Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build
+          make_latest: 'true'
+          files: code/build/MiniMusicPlayer.ipa
+
+      - name: Update AltStore source (apps.json)
+        run: |
+          set -euo pipefail
+          IPA="code/build/MiniMusicPlayer.ipa"
+          SIZE=$(stat -f%z "$IPA")
+          VERSION="1.0.${{ github.run_number }}"
+          DATE=$(date -u +%Y-%m-%d)
+          DOWNLOAD_URL="https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa"
+          cat > apps.json <<EOF
+          {
+            "name": "Mini Music Player",
+            "identifier": "com.example.minimusicplayer.source",
+            "apps": [
+              {
+                "name": "Mini Music Player",
+                "bundleIdentifier": "com.example.MiniMusicPlayer",
+                "developerName": "animationsaver",
+                "version": "${VERSION}",
+                "versionDate": "${DATE}",
+                "versionDescription": "Automated build from CI.",
+                "downloadURL": "${DOWNLOAD_URL}",
+                "localizedDescription": "iOS 6 / iOS 9 style music player.",
+                "iconURL": "",
+                "tintColor": "1DB954",
+                "size": ${SIZE},
+                "minOSVersion": "12.0"
+              }
+            ]
+          }
+          EOF
+          cat apps.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps.json
+          git commit -m "Update AltStore source (build ${{ github.run_number }})" || echo "no changes"
+          git push
