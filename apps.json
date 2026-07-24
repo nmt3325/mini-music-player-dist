@@ -6,14 +6,14 @@
       "name": "Mini Music Player",
       "bundleIdentifier": "com.example.MiniMusicPlayer",
       "developerName": "animationsaver",
-      "version": "1.0.38",
+      "version": "1.0.39",
       "versionDate": "2026-07-24",
       "versionDescription": "Automated build from CI.",
       "downloadURL": "https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa",
       "localizedDescription": "iOS 6 / iOS 9 style music player.",
       "iconURL": "",
       "tintColor": "1DB954",
-      "size": 16238339,
+      "size": 16240442,
       "minOSVersion": "12.0"
     }
   ]
