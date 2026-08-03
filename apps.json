@@ -11,7 +11,7 @@
       "versionDescription": "Automated build from CI.",
       "downloadURL": "https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa",
       "localizedDescription": "iOS 6 / iOS 9 style music player.",
-      "iconURL": "",
+      "iconURL": "https://avatars.githubusercontent.com/u/300714840?v=4",
       "tintColor": "1DB954",
       "size": 16767588,
       "minOSVersion": "12.0"
