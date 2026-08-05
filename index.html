@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mini Music Player</title>
-<meta name="description" content="iOS 6 / iOS 9 style music player. Install with AltStore, SideStore or LiveContainer.">
+<meta name="description" content="iOS 6 / iOS 9 style music player. Install with AltStore, SideStore, LiveContainer or TrollStore.">
 <style>
   :root {
     --ink: #000;
@@ -52,8 +52,23 @@
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
   }
-  .badge-link img { height: 56px; width: auto; max-width: 100%; }
+  .badge-link img { height: 62px; width: auto; max-width: 100%; }
   .badge-link:active { opacity: 0.6; }
+  .install-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border: 1px solid var(--ink);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .install-link:active { opacity: 0.6; }
+  .install-link .app-icon { width: 42px; height: 42px; border-radius: 10px; }
+  .install-link span { display: flex; flex-direction: column; font-size: 18px; font-weight: 600; line-height: 1.15; }
+  .install-link small { font-size: 11px; font-weight: 500; color: var(--muted); }
   .note { font-size: 12px; line-height: 1.7; color: var(--muted); margin: 14px 0 0; }
   .row {
     display: flex;
@@ -91,7 +106,6 @@
   footer a { color: var(--muted); }
   @media (prefers-color-scheme: dark) {
     :root { --ink: #fff; --paper: #000; --muted: #999; --line: #333; }
-    .badge-link img { filter: invert(1); }
   }
 </style>
 </head>
@@ -107,21 +121,29 @@
     <h2>Install</h2>
     <div class="badges">
       <a class="badge-link" id="altstore" href="#">
-        <img alt="Install with AltStore"
-             src="https://img.shields.io/badge/Install%20with-AltStore-000000?style=for-the-badge&labelColor=000000&color=ffffff&logo=apple&logoColor=white">
+        <picture>
+          <source srcset="assets/altstore-badge-dark.png" media="(prefers-color-scheme: dark)">
+          <img alt="Download on AltStore" src="assets/altstore-badge-light.png">
+        </picture>
       </a>
       <a class="badge-link" id="sidestore" href="#">
-        <img alt="Install with SideStore"
-             src="https://img.shields.io/badge/Install%20with-SideStore-000000?style=for-the-badge&labelColor=000000&color=ffffff&logo=apple&logoColor=white">
+        <picture>
+          <source srcset="assets/sidestore-badge-white.svg" media="(prefers-color-scheme: dark)">
+          <img alt="Add source to SideStore" src="assets/sidestore-badge.svg">
+        </picture>
       </a>
-      <a class="badge-link" id="livecontainer" href="#">
-        <img alt="Install with LiveContainer"
-             src="https://img.shields.io/badge/Install%20with-LiveContainer-000000?style=for-the-badge&labelColor=000000&color=ffffff&logo=apple&logoColor=white">
+      <a class="install-link" id="livecontainer" href="#">
+        <img class="app-icon" alt="" src="assets/livecontainer-icon.png">
+        <span><small>Install with</small>LiveContainer</span>
+      </a>
+      <a class="install-link" id="trollstore" href="#">
+        <img class="app-icon" alt="" src="assets/trollstore-icon.jpg">
+        <span><small>Install with</small>TrollStore</span>
       </a>
     </div>
     <p class="note">
       AltStore / SideStore はソース（apps.json）を追加します。アプリ内の Sources からインストールしてください。<br>
-      LiveContainer は最新の IPA を直接読み込みます。
+      LiveContainer / TrollStore は最新の IPA を直接読み込みます。
     </p>
   </section>
 
@@ -163,6 +185,7 @@
   document.getElementById("altstore").href = "altstore://source?url=" + sourceURL;
   document.getElementById("sidestore").href = "sidestore://source?url=" + sourceURL;
   document.getElementById("livecontainer").href = "livecontainer://install?url=" + encodeURIComponent(ipaURL);
+  document.getElementById("trollstore").href = "apple-magnifier://install?url=" + ipaURL;
 
   // スキームなし形式しか受け付けないバージョンへのフォールバック。
   function withFallback(id, fallbackURL) {
