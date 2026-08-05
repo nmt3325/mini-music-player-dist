@@ -92,6 +92,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            MARKETING_VERSION="1.0.$BUILD_NUMBER" \
             LASTFM_API_KEY="$LASTFM_API_KEY" \
             LASTFM_API_SECRET="$LASTFM_API_SECRET" \
             archive
@@ -107,6 +108,13 @@ jobs:
             echo "::warning::Last.fm API credentials are not embedded (set LASTFM_API_KEY / LASTFM_API_SECRET secrets)."
           else
             echo "Last.fm API credentials embedded (key length: ${#KEY})."
+          fi
+          SHORT=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")
+          BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")
+          echo "Embedded version: $SHORT (build $BUILD)"
+          if [ "$SHORT" != "1.0.${{ github.run_number }}" ]; then
+            echo "::error::CFBundleShortVersionString ($SHORT) does not match published version 1.0.${{ github.run_number }}"
+            exit 1
           fi
 
       - name: Package unsigned IPA
