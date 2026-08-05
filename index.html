@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mini Music Player</title>
+<meta name="description" content="iOS 6 / iOS 9 style music player. Install with AltStore, SideStore or LiveContainer.">
+<style>
+  :root {
+    --accent: #1db954;
+    --bg: #0f1115;
+    --card: #191c22;
+    --text: #f2f4f8;
+    --muted: #9aa3b2;
+    --border: rgba(255, 255, 255, 0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 20px 64px;
+    background: radial-gradient(1200px 600px at 50% -10%, #1d2430 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 520px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 28px; }
+  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .tagline { color: var(--muted); margin: 0; font-size: 15px; }
+  .version { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  h2 { font-size: 15px; margin: 0 0 14px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  a.btn, button.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 15px 18px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  a.btn:active, button.btn:active { transform: scale(0.985); }
+  a.btn.primary { background: var(--accent); border-color: transparent; color: #06240f; }
+  a.btn:last-child, button.btn:last-child { margin-bottom: 0; }
+  .hint { font-size: 13px; color: var(--muted); margin: 12px 0 0; line-height: 1.6; }
+  code {
+    display: block;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--muted);
+    font-size: 12px;
+    word-break: break-all;
+  }
+  footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--muted); }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Mini Music Player</h1>
+    <p class="tagline">iOS 6 / iOS 9 style music player for iPhone &amp; iPad</p>
+    <p class="version" id="version">Loading latest build&hellip;</p>
+  </header>
+
+  <section class="card">
+    <h2>Install</h2>
+    <a class="btn primary" id="altstore" href="#">Install with AltStore</a>
+    <a class="btn" id="sidestore" href="#">Install with SideStore</a>
+    <a class="btn" id="livecontainer" href="#">Install with LiveContainer</a>
+    <p class="hint">
+      AltStore / SideStore のボタンはソース（apps.json）を追加します。アプリ内の Sources からインストールしてください。<br>
+      LiveContainer のボタンは最新の IPA を直接読み込みます。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Manual</h2>
+    <button class="btn" id="copy-source" type="button">Copy source URL</button>
+    <a class="btn" id="download" href="https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa">Download .ipa</a>
+    <code id="source-url">https://animationsaver.github.io/mini-music-player-dist/apps.json</code>
+  </section>
+
+  <footer>
+    <a href="https://github.com/animationsaver/mini-music-player-dist">GitHub repository</a>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var base = location.origin + location.pathname.replace(/index\.html$/, "");
+  if (base.charAt(base.length - 1) !== "/") { base += "/"; }
+  var sourceURL = base + "apps.json";
+  var sourceNoScheme = sourceURL.replace(/^https?:\/\//, "");
+  var ipaURL = "https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa";
+
+  document.getElementById("source-url").textContent = sourceURL;
+  document.getElementById("altstore").href = "altstore://source?url=" + sourceURL;
+  document.getElementById("sidestore").href = "sidestore://source?url=" + sourceURL;
+  document.getElementById("livecontainer").href = "livecontainer://install?url=" + encodeURIComponent(ipaURL);
+
+  // AltStore の旧形式（スキームなし）をフォールバックとして試す。
+  function withFallback(id, fallbackURL) {
+    var el = document.getElementById(id);
+    el.addEventListener("click", function () {
+      setTimeout(function () {
+        if (!document.hidden) { window.location = fallbackURL; }
+      }, 1200);
+    });
+  }
+  withFallback("altstore", "altstore://source?url=" + sourceNoScheme);
+  withFallback("sidestore", "sidestore://source?url=" + sourceNoScheme);
+
+  var copyButton = document.getElementById("copy-source");
+  copyButton.addEventListener("click", function () {
+    function done() {
+      copyButton.textContent = "Copied!";
+      setTimeout(function () { copyButton.textContent = "Copy source URL"; }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(sourceURL).then(done, fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+    function fallbackCopy() {
+      var field = document.createElement("textarea");
+      field.value = sourceURL;
+      document.body.appendChild(field);
+      field.select();
+      try { document.execCommand("copy"); done(); } catch (e) {}
+      document.body.removeChild(field);
+    }
+  });
+
+  var request = new XMLHttpRequest();
+  request.open("GET", sourceURL + "?t=" + Date.now(), true);
+  request.onload = function () {
+    try {
+      var app = JSON.parse(request.responseText).apps[0];
+      var mb = (app.size / 1024 / 1024).toFixed(1);
+      document.getElementById("version").textContent =
+        "Version " + app.version + " ・ " + app.versionDate + " ・ " + mb + " MB ・ iOS " + app.minOSVersion + "+";
+    } catch (e) {
+      document.getElementById("version").textContent = "";
+    }
+  };
+  request.onerror = function () { document.getElementById("version").textContent = ""; };
+  request.send();
+})();
+</script>
+</body>
+</html>
