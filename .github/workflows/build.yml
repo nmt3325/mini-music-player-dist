@@ -37,6 +37,8 @@ jobs:
         env:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
         run: |
           set -o pipefail
           xcodebuild \
@@ -48,6 +50,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             LASTFM_API_KEY="$LASTFM_API_KEY" \
             LASTFM_API_SECRET="$LASTFM_API_SECRET" \
+            SPOTIFY_CLIENT_ID="$SPOTIFY_CLIENT_ID" \
+            SPOTIFY_CLIENT_SECRET="$SPOTIFY_CLIENT_SECRET" \
             build
 
   build-ipa:
@@ -80,6 +84,8 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
         run: |
           set -o pipefail
           xcodebuild \
@@ -95,9 +101,11 @@ jobs:
             MARKETING_VERSION="1.0.$BUILD_NUMBER" \
             LASTFM_API_KEY="$LASTFM_API_KEY" \
             LASTFM_API_SECRET="$LASTFM_API_SECRET" \
+            SPOTIFY_CLIENT_ID="$SPOTIFY_CLIENT_ID" \
+            SPOTIFY_CLIENT_SECRET="$SPOTIFY_CLIENT_SECRET" \
             archive
 
-      - name: Verify embedded Last.fm keys
+      - name: Verify embedded API credentials and version
         working-directory: code
         run: |
           set -euo pipefail
@@ -108,6 +116,13 @@ jobs:
             echo "::warning::Last.fm API credentials are not embedded (set LASTFM_API_KEY / LASTFM_API_SECRET secrets)."
           else
             echo "Last.fm API credentials embedded (key length: ${#KEY})."
+          fi
+          SPOTIFY_ID=$(/usr/libexec/PlistBuddy -c 'Print :SpotifyClientID' "$PLIST" 2>/dev/null || echo "")
+          SPOTIFY_SECRET=$(/usr/libexec/PlistBuddy -c 'Print :SpotifyClientSecret' "$PLIST" 2>/dev/null || echo "")
+          if [ -z "$SPOTIFY_ID" ] || [ -z "$SPOTIFY_SECRET" ] || case "$SPOTIFY_ID" in '$('*) true;; *) false;; esac; then
+            echo "::warning::Spotify credentials are not embedded (set SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET secrets). Artist images will fall back to Apple Music only."
+          else
+            echo "Spotify credentials embedded (client id length: ${#SPOTIFY_ID})."
           fi
           SHORT=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")
           BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")
