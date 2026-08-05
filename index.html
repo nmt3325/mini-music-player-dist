@@ -7,100 +7,147 @@
 <meta name="description" content="iOS 6 / iOS 9 style music player. Install with AltStore, SideStore or LiveContainer.">
 <style>
   :root {
-    --accent: #1db954;
-    --bg: #0f1115;
-    --card: #191c22;
-    --text: #f2f4f8;
-    --muted: #9aa3b2;
-    --border: rgba(255, 255, 255, 0.12);
+    --ink: #000;
+    --paper: #fff;
+    --muted: #666;
+    --line: #ddd;
   }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    padding: 40px 20px 64px;
-    background: radial-gradient(1200px 600px at 50% -10%, #1d2430 0%, var(--bg) 60%);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", sans-serif;
+    padding: 56px 20px 72px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, "Hiragino Sans", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  main { max-width: 520px; margin: 0 auto; }
-  header { text-align: center; margin-bottom: 28px; }
-  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.02em; }
-  .tagline { color: var(--muted); margin: 0; font-size: 15px; }
-  .version { margin-top: 10px; font-size: 13px; color: var(--muted); }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 16px;
+  main { max-width: 460px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 36px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .tagline { margin: 0; font-size: 14px; color: var(--muted); }
+  .version {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
   }
-  h2 { font-size: 15px; margin: 0 0 14px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-  a.btn, button.btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 15px 18px;
-    margin-bottom: 10px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text);
-    font-size: 16px;
+  h2 {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
     font-weight: 600;
+    margin: 0 0 14px;
+  }
+  section { margin-bottom: 34px; }
+  .badges { display: flex; flex-direction: column; gap: 12px; }
+  .badge-link {
+    display: block;
+    text-align: center;
     text-decoration: none;
-    cursor: pointer;
-    font-family: inherit;
     -webkit-tap-highlight-color: transparent;
   }
-  a.btn:active, button.btn:active { transform: scale(0.985); }
-  a.btn.primary { background: var(--accent); border-color: transparent; color: #06240f; }
-  a.btn:last-child, button.btn:last-child { margin-bottom: 0; }
-  .hint { font-size: 13px; color: var(--muted); margin: 12px 0 0; line-height: 1.6; }
+  .badge-link img { height: 56px; width: auto; max-width: 100%; }
+  .badge-link:active { opacity: 0.6; }
+  .note { font-size: 12px; line-height: 1.7; color: var(--muted); margin: 14px 0 0; }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .row:last-of-type { border-bottom: 1px solid var(--line); }
+  .row a, .row button {
+    font: inherit;
+    font-weight: 600;
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    padding: 6px 12px;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
   code {
     display: block;
-    margin-top: 10px;
+    margin-top: 14px;
     padding: 10px 12px;
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 11px;
     color: var(--muted);
-    font-size: 12px;
     word-break: break-all;
   }
-  footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--muted); }
+  footer { text-align: center; font-size: 12px; color: var(--muted); }
   footer a { color: var(--muted); }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #fff; --paper: #000; --muted: #999; --line: #333; }
+    .badge-link img { filter: invert(1); }
+  }
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1>Mini Music Player</h1>
-    <p class="tagline">iOS 6 / iOS 9 style music player for iPhone &amp; iPad</p>
-    <p class="version" id="version">Loading latest build&hellip;</p>
+    <p class="tagline">iOS 6 / iOS 9 style music player</p>
+    <div class="version" id="version">Loading latest build&hellip;</div>
   </header>
 
-  <section class="card">
+  <section>
     <h2>Install</h2>
-    <a class="btn primary" id="altstore" href="#">Install with AltStore</a>
-    <a class="btn" id="sidestore" href="#">Install with SideStore</a>
-    <a class="btn" id="livecontainer" href="#">Install with LiveContainer</a>
-    <p class="hint">
-      AltStore / SideStore のボタンはソース（apps.json）を追加します。アプリ内の Sources からインストールしてください。<br>
-      LiveContainer のボタンは最新の IPA を直接読み込みます。
+    <div class="badges">
+      <a class="badge-link" id="altstore" href="#">
+        <img alt="Install with AltStore"
+             src="https://img.shields.io/badge/Install%20with-AltStore-000000?style=for-the-badge&labelColor=000000&color=ffffff&logo=apple&logoColor=white">
+      </a>
+      <a class="badge-link" id="sidestore" href="#">
+        <img alt="Install with SideStore"
+             src="https://img.shields.io/badge/Install%20with-SideStore-000000?style=for-the-badge&labelColor=000000&color=ffffff&logo=apple&logoColor=white">
+      </a>
+      <a class="badge-link" id="livecontainer" href="#">
+        <img alt="Install with LiveContainer"
+             src="https://img.shields.io/badge/Install%20with-LiveContainer-000000?style=for-the-badge&labelColor=000000&color=ffffff&logo=apple&logoColor=white">
+      </a>
+    </div>
+    <p class="note">
+      AltStore / SideStore はソース（apps.json）を追加します。アプリ内の Sources からインストールしてください。<br>
+      LiveContainer は最新の IPA を直接読み込みます。
     </p>
   </section>
 
-  <section class="card">
+  <section>
+    <h2>Build</h2>
+    <div class="row"><span>Version</span><strong id="build-version">&mdash;</strong></div>
+    <div class="row"><span>Released</span><strong id="build-date">&mdash;</strong></div>
+    <div class="row"><span>Size</span><strong id="build-size">&mdash;</strong></div>
+    <div class="row"><span>Requires</span><strong id="build-os">&mdash;</strong></div>
+  </section>
+
+  <section>
     <h2>Manual</h2>
-    <button class="btn" id="copy-source" type="button">Copy source URL</button>
-    <a class="btn" id="download" href="https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa">Download .ipa</a>
+    <div class="row">
+      <span>Source URL</span>
+      <button id="copy-source" type="button">Copy</button>
+    </div>
+    <div class="row">
+      <span>Unsigned IPA</span>
+      <a href="https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa">Download</a>
+    </div>
     <code id="source-url">https://animationsaver.github.io/mini-music-player-dist/apps.json</code>
   </section>
 
   <footer>
-    <a href="https://github.com/animationsaver/mini-music-player-dist">GitHub repository</a>
+    <a href="https://github.com/animationsaver/mini-music-player-dist">GitHub</a>
   </footer>
 </main>
 
@@ -117,10 +164,9 @@
   document.getElementById("sidestore").href = "sidestore://source?url=" + sourceURL;
   document.getElementById("livecontainer").href = "livecontainer://install?url=" + encodeURIComponent(ipaURL);
 
-  // AltStore の旧形式（スキームなし）をフォールバックとして試す。
+  // スキームなし形式しか受け付けないバージョンへのフォールバック。
   function withFallback(id, fallbackURL) {
-    var el = document.getElementById(id);
-    el.addEventListener("click", function () {
+    document.getElementById(id).addEventListener("click", function () {
       setTimeout(function () {
         if (!document.hidden) { window.location = fallbackURL; }
       }, 1200);
@@ -132,13 +178,8 @@
   var copyButton = document.getElementById("copy-source");
   copyButton.addEventListener("click", function () {
     function done() {
-      copyButton.textContent = "Copied!";
-      setTimeout(function () { copyButton.textContent = "Copy source URL"; }, 1600);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(sourceURL).then(done, fallbackCopy);
-    } else {
-      fallbackCopy();
+      copyButton.textContent = "Copied";
+      setTimeout(function () { copyButton.textContent = "Copy"; }, 1600);
     }
     function fallbackCopy() {
       var field = document.createElement("textarea");
@@ -148,21 +189,30 @@
       try { document.execCommand("copy"); done(); } catch (e) {}
       document.body.removeChild(field);
     }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(sourceURL).then(done, fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
   });
+
+  function setText(id, value) { document.getElementById(id).textContent = value; }
 
   var request = new XMLHttpRequest();
   request.open("GET", sourceURL + "?t=" + Date.now(), true);
   request.onload = function () {
     try {
       var app = JSON.parse(request.responseText).apps[0];
-      var mb = (app.size / 1024 / 1024).toFixed(1);
-      document.getElementById("version").textContent =
-        "Version " + app.version + " ・ " + app.versionDate + " ・ " + mb + " MB ・ iOS " + app.minOSVersion + "+";
+      setText("version", "Latest build ・ v" + app.version);
+      setText("build-version", app.version);
+      setText("build-date", app.versionDate);
+      setText("build-size", (app.size / 1024 / 1024).toFixed(1) + " MB");
+      setText("build-os", "iOS " + app.minOSVersion + "+");
     } catch (e) {
-      document.getElementById("version").textContent = "";
+      setText("version", "Latest build");
     }
   };
-  request.onerror = function () { document.getElementById("version").textContent = ""; };
+  request.onerror = function () { setText("version", "Latest build"); };
   request.send();
 })();
 </script>
