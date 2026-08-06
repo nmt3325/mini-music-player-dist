@@ -39,6 +39,7 @@ jobs:
           LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          MUSICKIT_DEVELOPER_TOKEN: ${{ secrets.MUSICKIT_DEVELOPER_TOKEN }}
         run: |
           set -o pipefail
           xcodebuild \
@@ -52,6 +53,7 @@ jobs:
             LASTFM_API_SECRET="$LASTFM_API_SECRET" \
             SPOTIFY_CLIENT_ID="$SPOTIFY_CLIENT_ID" \
             SPOTIFY_CLIENT_SECRET="$SPOTIFY_CLIENT_SECRET" \
+            MUSICKIT_DEVELOPER_TOKEN="$MUSICKIT_DEVELOPER_TOKEN" \
             build
 
   build-ipa:
@@ -86,6 +88,7 @@ jobs:
           LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          MUSICKIT_DEVELOPER_TOKEN: ${{ secrets.MUSICKIT_DEVELOPER_TOKEN }}
         run: |
           set -o pipefail
           xcodebuild \
@@ -103,6 +106,7 @@ jobs:
             LASTFM_API_SECRET="$LASTFM_API_SECRET" \
             SPOTIFY_CLIENT_ID="$SPOTIFY_CLIENT_ID" \
             SPOTIFY_CLIENT_SECRET="$SPOTIFY_CLIENT_SECRET" \
+            MUSICKIT_DEVELOPER_TOKEN="$MUSICKIT_DEVELOPER_TOKEN" \
             archive
 
       - name: Verify embedded API credentials and version
@@ -124,6 +128,17 @@ jobs:
           else
             echo "Spotify credentials embedded (client id length: ${#SPOTIFY_ID})."
           fi
+          MUSICKIT_TOKEN=$(/usr/libexec/PlistBuddy -c 'Print :MusicKitDeveloperToken' "$PLIST" 2>/dev/null || echo "")
+          if [ -z "$MUSICKIT_TOKEN" ] || case "$MUSICKIT_TOKEN" in '$('*) true;; *) false;; esac; then
+            echo "::error::MusicKit developer token is not embedded (set MUSICKIT_DEVELOPER_TOKEN secret)."
+            exit 1
+          elif [ "$(awk -F. '{print NF}' <<<"$MUSICKIT_TOKEN")" -ne 3 ]; then
+            echo "::error::Embedded MusicKit developer token is not a three-part JWT."
+            exit 1
+          else
+            echo "MusicKit developer token embedded (length: ${#MUSICKIT_TOKEN})."
+          fi
+          unset MUSICKIT_TOKEN
           SHORT=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")
           BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")
           echo "Embedded version: $SHORT (build $BUILD)"
