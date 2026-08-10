@@ -163,13 +163,13 @@
     </div>
     <div class="row">
       <span>Unsigned IPA</span>
-      <a href="https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa">Download</a>
+      <a id="ipa-link" href="https://github.com/nmt3325/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa">Download</a>
     </div>
-    <code id="source-url">https://animationsaver.github.io/mini-music-player-dist/apps.json</code>
+    <code id="source-url">https://nmt3325.github.io/mini-music-player-dist/apps.json</code>
   </section>
 
   <footer>
-    <a href="https://github.com/animationsaver/mini-music-player-dist">GitHub</a>
+    <a id="repo-link" href="https://github.com/nmt3325/mini-music-player-dist">GitHub</a>
   </footer>
 </main>
 
@@ -179,9 +179,20 @@
   if (base.charAt(base.length - 1) !== "/") { base += "/"; }
   var sourceURL = base + "apps.json";
   var sourceNoScheme = sourceURL.replace(/^https?:\/\//, "");
-  var ipaURL = "https://github.com/animationsaver/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa";
+
+  // GitHub Pages のホスト名から owner/repo を推測し、リンク先を自動追従させる。
+  var repoSlug = "nmt3325/mini-music-player-dist";
+  var pagesOwner = location.hostname.replace(/\.github\.io$/, "");
+  var firstSegment = location.pathname.split("/").filter(Boolean)[0];
+  if (pagesOwner !== location.hostname && firstSegment) {
+    repoSlug = pagesOwner + "/" + firstSegment;
+  }
+  var repoURL = "https://github.com/" + repoSlug;
+  var ipaURL = repoURL + "/releases/latest/download/MiniMusicPlayer.ipa";
 
   document.getElementById("source-url").textContent = sourceURL;
+  document.getElementById("ipa-link").href = ipaURL;
+  document.getElementById("repo-link").href = repoURL;
   document.getElementById("altstore").href = "altstore://source?url=" + sourceURL;
   document.getElementById("sidestore").href = "sidestore://source?url=" + sourceURL;
   document.getElementById("livecontainer").href = "livecontainer://install?url=" + encodeURIComponent(ipaURL);
