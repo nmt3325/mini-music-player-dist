@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
   repository_dispatch:
     types: [code-updated]
@@ -10,55 +10,23 @@ on:
 permissions:
   contents: write
 
+# Only publish the newest requested build.
+concurrency:
+  group: unsigned-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODEGEN_VERSION: 2.46.0
+  XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+  XCODEGEN_DIR: ${{ github.workspace }}/.cache/xcodegen/2.46.0
+  DERIVED_DATA_PATH: ${{ github.workspace }}/code/build/DerivedData
+  SOURCE_PACKAGES_PATH: ${{ github.workspace }}/code/build/SourcePackages
+
 jobs:
-  build-simulator:
-    name: Build (iOS Simulator)
-    runs-on: macos-15
-    steps:
-      - name: Checkout app source (private repo)
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository_owner }}/mini-music-player
-          token: ${{ secrets.CODE_REPO_TOKEN || github.token }}
-          path: code
-
-      - name: Show Xcode version
-        run: xcodebuild -version
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate Xcode project
-        working-directory: code
-        run: xcodegen generate
-
-      - name: Build for simulator
-        working-directory: code
-        env:
-          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
-          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
-          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
-          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
-          MUSICKIT_DEVELOPER_TOKEN: ${{ secrets.MUSICKIT_DEVELOPER_TOKEN }}
-        run: |
-          set -o pipefail
-          xcodebuild \
-            -project MiniMusicPlayer.xcodeproj \
-            -scheme MiniMusicPlayer \
-            -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            LASTFM_API_KEY="$LASTFM_API_KEY" \
-            LASTFM_API_SECRET="$LASTFM_API_SECRET" \
-            SPOTIFY_CLIENT_ID="$SPOTIFY_CLIENT_ID" \
-            SPOTIFY_CLIENT_SECRET="$SPOTIFY_CLIENT_SECRET" \
-            MUSICKIT_DEVELOPER_TOKEN="$MUSICKIT_DEVELOPER_TOKEN" \
-            build
-
   build-ipa:
     name: Build unsigned IPA and publish
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - name: Checkout distribution repo
         uses: actions/checkout@v4
@@ -70,17 +38,56 @@ jobs:
           token: ${{ secrets.CODE_REPO_TOKEN || github.token }}
           path: code
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Inspect build environment
+        id: build_env
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          echo "xcode_key=$(xcodebuild -version | shasum -a 256 | awk '{print substr($1, 1, 16)}')" >> "$GITHUB_OUTPUT"
+          echo "Source commit: $(git -C code rev-parse HEAD)"
+
+      - name: Restore XcodeGen cache
+        id: xcodegen_cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.XCODEGEN_DIR }}
+          key: xcodegen-${{ runner.os }}-${{ runner.arch }}-${{ env.XCODEGEN_VERSION }}
 
       - name: Install XcodeGen
-        run: brew install xcodegen
+        if: steps.xcodegen_cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          ZIP="$RUNNER_TEMP/xcodegen.zip"
+          rm -rf "$XCODEGEN_DIR"
+          mkdir -p "$XCODEGEN_DIR"
+          curl -fsSL --retry 3 \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip" \
+            -o "$ZIP"
+          echo "${XCODEGEN_SHA256}  ${ZIP}" | shasum -a 256 -c -
+          unzip -q "$ZIP" -d "$XCODEGEN_DIR"
 
       - name: Generate Xcode project
         working-directory: code
-        run: xcodegen generate
+        run: |
+          set -euo pipefail
+          chmod +x "$XCODEGEN_DIR/bin/xcodegen"
+          "$XCODEGEN_DIR/bin/xcodegen" generate
 
-      - name: Archive (no code signing)
+      # Cache only dependency sources and compiler module caches. Build products
+      # are intentionally excluded because the app embeds API credentials.
+      - name: Restore Swift package and module caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.SOURCE_PACKAGES_PATH }}
+            ${{ env.DERIVED_DATA_PATH }}/ModuleCache.noindex
+            ${{ env.DERIVED_DATA_PATH }}/SDKStatCaches.noindex
+            ~/Library/Caches/org.swift.swiftpm
+          key: ios-deps-${{ runner.os }}-${{ runner.arch }}-${{ steps.build_env.outputs.xcode_key }}-${{ hashFiles('code/project.yml') }}
+          restore-keys: |
+            ios-deps-${{ runner.os }}-${{ runner.arch }}-${{ steps.build_env.outputs.xcode_key }}-
+
+      - name: Build unsigned device app
         working-directory: code
         env:
           BUILD_NUMBER: ${{ github.run_number }}
@@ -90,16 +97,21 @@ jobs:
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           MUSICKIT_DEVELOPER_TOKEN: ${{ secrets.MUSICKIT_DEVELOPER_TOKEN }}
         run: |
-          set -o pipefail
+          set -euo pipefail
           xcodebuild \
             -project MiniMusicPlayer.xcodeproj \
             -scheme MiniMusicPlayer \
             -configuration Release \
             -sdk iphoneos \
-            -archivePath "$PWD/build/MiniMusicPlayer.xcarchive" \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -clonedSourcePackagesDirPath "$SOURCE_PACKAGES_PATH" \
+            -skipPackageUpdates \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             MARKETING_VERSION="1.0.$BUILD_NUMBER" \
             LASTFM_API_KEY="$LASTFM_API_KEY" \
@@ -107,13 +119,19 @@ jobs:
             SPOTIFY_CLIENT_ID="$SPOTIFY_CLIENT_ID" \
             SPOTIFY_CLIENT_SECRET="$SPOTIFY_CLIENT_SECRET" \
             MUSICKIT_DEVELOPER_TOKEN="$MUSICKIT_DEVELOPER_TOKEN" \
-            archive
+            build
 
-      - name: Verify embedded API credentials and version
+      - name: Verify and package unsigned IPA
         working-directory: code
         run: |
           set -euo pipefail
-          PLIST="build/MiniMusicPlayer.xcarchive/Products/Applications/MiniMusicPlayer.app/Info.plist"
+          APP_PATH="$DERIVED_DATA_PATH/Build/Products/Release-iphoneos/MiniMusicPlayer.app"
+          PLIST="$APP_PATH/Info.plist"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::built .app not found at $APP_PATH"
+            exit 1
+          fi
+
           KEY=$(/usr/libexec/PlistBuddy -c 'Print :LastFMAPIKey' "$PLIST" 2>/dev/null || echo "")
           SECRET=$(/usr/libexec/PlistBuddy -c 'Print :LastFMAPISecret' "$PLIST" 2>/dev/null || echo "")
           if [ -z "$KEY" ] || [ -z "$SECRET" ] || case "$KEY" in '$('*) true;; *) false;; esac; then
@@ -121,6 +139,7 @@ jobs:
           else
             echo "Last.fm API credentials embedded (key length: ${#KEY})."
           fi
+
           SPOTIFY_ID=$(/usr/libexec/PlistBuddy -c 'Print :SpotifyClientID' "$PLIST" 2>/dev/null || echo "")
           SPOTIFY_SECRET=$(/usr/libexec/PlistBuddy -c 'Print :SpotifyClientSecret' "$PLIST" 2>/dev/null || echo "")
           if [ -z "$SPOTIFY_ID" ] || [ -z "$SPOTIFY_SECRET" ] || case "$SPOTIFY_ID" in '$('*) true;; *) false;; esac; then
@@ -128,6 +147,7 @@ jobs:
           else
             echo "Spotify credentials embedded (client id length: ${#SPOTIFY_ID})."
           fi
+
           MUSICKIT_TOKEN=$(/usr/libexec/PlistBuddy -c 'Print :MusicKitDeveloperToken' "$PLIST" 2>/dev/null || echo "")
           if [ -z "$MUSICKIT_TOKEN" ] || case "$MUSICKIT_TOKEN" in '$('*) true;; *) false;; esac; then
             echo "::error::MusicKit developer token is not embedded (set MUSICKIT_DEVELOPER_TOKEN secret)."
@@ -139,6 +159,7 @@ jobs:
             echo "MusicKit developer token embedded (length: ${#MUSICKIT_TOKEN})."
           fi
           unset MUSICKIT_TOKEN
+
           SHORT=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")
           BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")
           echo "Embedded version: $SHORT (build $BUILD)"
@@ -147,27 +168,11 @@ jobs:
             exit 1
           fi
 
-      - name: Package unsigned IPA
-        working-directory: code
-        run: |
-          set -euo pipefail
-          APP_PATH="build/MiniMusicPlayer.xcarchive/Products/Applications/MiniMusicPlayer.app"
-          if [ ! -d "$APP_PATH" ]; then
-            echo "::error::built .app not found at $APP_PATH"
-            exit 1
-          fi
           rm -rf build/Payload build/MiniMusicPlayer.ipa
           mkdir -p build/Payload
           cp -R "$APP_PATH" build/Payload/
           (cd build && zip -qry MiniMusicPlayer.ipa Payload)
           ls -lh build/MiniMusicPlayer.ipa
-
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: MiniMusicPlayer-unsigned-ipa
-          path: code/build/MiniMusicPlayer.ipa
-          if-no-files-found: error
 
       - name: Publish IPA to Releases
         env:
