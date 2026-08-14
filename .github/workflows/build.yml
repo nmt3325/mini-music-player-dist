@@ -70,8 +70,8 @@ jobs:
         working-directory: code
         run: |
           set -euo pipefail
-          chmod +x "$XCODEGEN_DIR/bin/xcodegen"
-          "$XCODEGEN_DIR/bin/xcodegen" generate
+          chmod +x "$XCODEGEN_DIR/xcodegen/bin/xcodegen"
+          "$XCODEGEN_DIR/xcodegen/bin/xcodegen" generate
 
       # Cache only dependency sources and compiler module caches. Build products
       # are intentionally excluded because the app embeds API credentials.
