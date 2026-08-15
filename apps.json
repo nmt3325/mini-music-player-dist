@@ -6,7 +6,7 @@
       "name": "Mini Music Player",
       "bundleIdentifier": "com.example.MiniMusicPlayer",
       "developerName": "nmt3325",
-      "version": "1.0.214",
+      "version": "1.0.215",
       "versionDate": "2026-08-15",
       "versionDescription": "Automated build from CI.",
       "downloadURL": "https://github.com/nmt3325/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa",
