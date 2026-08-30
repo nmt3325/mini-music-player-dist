@@ -6,14 +6,14 @@
       "name": "Mini Music Player",
       "bundleIdentifier": "com.example.MiniMusicPlayer",
       "developerName": "nmt3325",
-      "version": "1.4.439",
+      "version": "1.4.440",
       "versionDate": "2026-08-30",
-      "versionDescription": "Automated build from CI (commit 1988fa4).",
+      "versionDescription": "Automated build from CI (commit 1a88007).",
       "downloadURL": "https://github.com/nmt3325/mini-music-player-dist/releases/latest/download/MiniMusicPlayer.ipa",
       "localizedDescription": "iOS 6 / iOS 9 style music player.",
       "iconURL": "https://nmt3325.github.io/mini-music-player-dist/assets/app-icon.png",
       "tintColor": "1DB954",
-      "size": 20947072,
+      "size": 20949951,
       "minOSVersion": "12.0"
     }
   ]
